@@ -41,7 +41,6 @@ iptables -A FORWARD -i eth0 -j ACCEPT
 
 
 /usr/bin/expect <<EOF
-set timeout 5
 spawn $snx_command
 expect "*?assword:"
 send "$password\r"
