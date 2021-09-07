@@ -39,11 +39,12 @@ fi
 iptables -t nat -A POSTROUTING -o tunsnx -j MASQUERADE
 iptables -A FORWARD -i eth0 -j ACCEPT
 
+
 /usr/bin/expect <<EOF
+set timeout 5
 spawn $snx_command
 expect "*?assword:"
 send "$password\r"
-set timeout 5
 expect "*Do you accept*"
 send "y\r"
 expect "SNX - connected."
