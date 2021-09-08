@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  snx-checkpoint-vpn:
+    container_name: "${CONTAINER_NAME}"
+    image: ananni/snx-checkpoint-vpn:latest
+    env_file: ./.env
+    cap_add:
+      - ALL
+    tty: true
+    volumes:
+      - /lib/modules:/lib/modules
+      - ${LOCAL_CERTIFICATE_PATH}:/certificate.p12
