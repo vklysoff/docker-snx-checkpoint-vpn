@@ -55,7 +55,7 @@ docker run --name snx-vpn \
 ### 2. Get private IP address of docker container
 
 ```bash
-docker inspect --format '{{ .NetworkSettings.IPAddress }}' snx-vpn
+docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' snx-vpn
 172.17.0.2
 ```
 
@@ -104,7 +104,7 @@ Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 Then manually add a route:
 
 ```bash
-sudo route add -net 10.20.30.0 netmask 255.255.255.0 gw `docker inspect --format '{{ .NetworkSettings.IPAddress }}' snx-vpn`
+sudo route add -net 10.20.30.0 netmask 255.255.255.0 gw `docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' snx-vpn`
 ```
 
 And finally test access. In this example trying to reach via SSH a remote server:
@@ -332,7 +332,7 @@ Once you checked that the SNX client works, you could create a script to make th
         exit 0
     fi
     docker start $SNX_DOCKER_NAME
-    SNX_DOCKER_IP="$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' $SNX_DOCKER_NAME)"
+    SNX_DOCKER_IP="$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $SNX_DOCKER_NAME)"
     # Add custom rules behind this line
     #sudo route add -net 10.20.30.0 netmask 255.255.255.0 gw $SNX_DOCKER_IP
     ```
