@@ -81,11 +81,11 @@ ssh 10.20.30.40
 
 ## Allowed volumes
 
-`/certificate.p12`: A VPN client certificate. If present the SNX binary will be invoked with "-c" parameter pointing to this certificate file.
+`/certificate.p12`: A VPN client certificate. If present the SNX binary will be invoked with `-c` parameter pointing to this certificate file.
 
 ## Routes
 
-Since the container is the one that connects to the VPN server, it's the one that receives the routes. In order to list all of them perform the following command from the docker host ("snx-vpn" is the container name in this example):
+Since the container is the one that connects to the VPN server, it's the one that receives the routes. In order to list all of them perform the following command from the docker host (`snx-vpn` is the container name in this example):
 
 ```bash
 docker exec -ti snx-vpn route -n | grep -v eth0
@@ -117,76 +117,80 @@ ssh user@10.20.30.40
 
 Since the container is the one that connects to the VPN server, it's the one that receives the DNS servers. In order to get them you can proceed in on of two ways:
 
-a) Check the container logs ("snx-vpn" is the container name in this example)
+* Check the container logs (`snx-vpn` is the container name in this example)
 
-```bash
-docker logs snx-vpn | grep DNS
-```
+    ```bash
+    docker logs snx-vpn | grep DNS
+    ```
 
-Expected output similar to:
+    Expected output similar to:
 
-```bash
-DNS Server          : 10.20.30.11
-Secondary DNS Server: 10.20.30.12
-```
+    ```bash
+    DNS Server          : 10.20.30.11
+    Secondary DNS Server: 10.20.30.12
+    ```
 
-b) Check "/etc/resolv.conf" container file ("snx-vpn" is the container name in this example)
+OR
 
-```bash
-docker exec -ti snx-vpn cat /etc/resolv.conf
-```
+* Check `/etc/resolv.conf` container file (`snx-vpn` is the container name in this example)
 
-Expected output similar to:
+    ```bash
+    docker exec -ti snx-vpn cat /etc/resolv.conf
+    ```
 
-```bash
-nameserver 10.20.30.11
-nameserver 10.20.30.12
-nameserver 8.8.4.4
-nameserver 8.8.8.8
-```
+    Expected output similar to:
+
+    ```bash
+    nameserver 10.20.30.11
+    nameserver 10.20.30.12
+    nameserver 8.8.4.4
+    nameserver 8.8.8.8
+    ```
 
 Once you know the DNS servers you can proceed in one of two ways:
 
-a) Update your docker host "/etc/resolv.conf"
+* Update your docker host `/etc/resolv.conf`
 
-```bash
-sudo vim /etc/resolv.conf
-```
+    ```bash
+    sudo vim /etc/resolv.conf
+    ```
 
-With below content:
+    With below content:
 
-```bash
-nameserver 10.20.30.11
-nameserver 10.20.30.12
-```
+    ```bash
+    nameserver 10.20.30.11
+    nameserver 10.20.30.12
+    ```
 
-You should remember to revert back the changes once finished
+    You should remember to revert back the changes once finished
 
-b) Run a local dnsmasq service. It requeries that you know the remote domains beforehand ("example.com" in this example)
+OR
 
-1. Create the file:
+* Run a local dnsmasq service. It requeries that you know the remote domains beforehand (`example.com` in this example)
 
-```bash
-sudo vim /etc/dnsmasq.d/example.com
-```
+    1. Create the file:
 
-With below content:
+        ```bash
+        sudo vim /etc/dnsmasq.d/example.com
+        ```
 
-```bash
-server=/example.com/10.20.30.11
-```
+        With below content:
 
-2. Restart the "dnsmasq" service
+        ```bash
+        server=/example.com/10.20.30.11
+        ```
 
-```bash
-sudo service dnsmasq restart
-```
+    2. Restart the "dnsmasq" service
 
-3. Test it
+        ```bash
+        sudo service dnsmasq restart
+        ```
 
-```bash
-ssh server.example.com
-```
+    3. Test it
+
+        ```bash
+        ssh server.example.com
+        ```
 
 ## Troubleshooting
 
@@ -200,113 +204,113 @@ If the container started up you could quickly test the new SNX build as follows:
 
 1. Copy the SNX build from the docker host to the docker container
 
-```bash
-docker cp snx_install.sh snx-vpn:/
-```
+    ```bash
+    docker cp snx_install.sh snx-vpn:/
+    ```
 
 2. Connect to the docker container
 
-```bash
-docker exec -ti snx-vpn bash
-```
+    ```bash
+    docker exec -ti snx-vpn bash
+    ```
 
 3. Get process ID of the currently running SNX client (if any):
 
-```bash
-ps ax
-```
+    ```bash
+    ps ax
+    ```
 
-Expected output similar to:
+    Expected output similar to:
 
-```bash
-  PID TTY      STAT   TIME COMMAND
-    1 pts/0    Ss     0:00 /bin/bash /root/snx.sh
-   29 ?        Ss     0:00 snx -s ip_vpn_server -c /certificate.p12
-   32 pts/0    S+     0:00 /bin/bash
-   37 pts/1    Ss     0:00 bash
-   47 pts/1    R+     0:00 ps ax
-```
+    ```bash
+    PID TTY      STAT   TIME COMMAND
+        1 pts/0    Ss     0:00 /bin/bash /root/snx.sh
+    29 ?        Ss     0:00 snx -s ip_vpn_server -c /certificate.p12
+    32 pts/0    S+     0:00 /bin/bash
+    37 pts/1    Ss     0:00 bash
+    47 pts/1    R+     0:00 ps ax
+    ```
 
 4. Kill the process (in this example 29):
 
-```bash
-kill 29
-```
+    ```bash
+    kill 29
+    ```
 
 5. Adjust permissions of the SNX build
 
-```bash
-chmod a+rx snx_install.sh
-```
+    ```bash
+    chmod a+rx snx_install.sh
+    ```
 
 6. Execute the installation file:
 
-```bash
-./snx_install.sh
-```
+    ```bash
+    ./snx_install.sh
+    ```
 
-Expected output:
+    Expected output:
 
-```bash
-Installation successfull
-```
+    ```bash
+    Installation successfull
+    ```
 
 7. Check installation:
 
-```bash
-ldd /usr/bin/snx
-```
+    ```bash
+    ldd /usr/bin/snx
+    ```
 
-Expected output similar to:
+    Expected output similar to:
 
-```bash
-	linux-gate.so.1 (0xf7f3c000)
-	libX11.so.6 => /usr/lib/i386-linux-gnu/libX11.so.6 (0xf7dea000)
-	libpthread.so.0 => /lib/i386-linux-gnu/libpthread.so.0 (0xf7dcb000)
-	libresolv.so.2 => /lib/i386-linux-gnu/libresolv.so.2 (0xf7db3000)
-	libdl.so.2 => /lib/i386-linux-gnu/libdl.so.2 (0xf7dae000)
-	libpam.so.0 => /lib/i386-linux-gnu/libpam.so.0 (0xf7d9e000)
-	libnsl.so.1 => /lib/i386-linux-gnu/libnsl.so.1 (0xf7d83000)
-	libstdc++.so.5 => /usr/lib/i386-linux-gnu/libstdc++.so.5 (0xf7cc4000)
-	libc.so.6 => /lib/i386-linux-gnu/libc.so.6 (0xf7ae8000)
-	libxcb.so.1 => /usr/lib/i386-linux-gnu/libxcb.so.1 (0xf7abc000)
-	/lib/ld-linux.so.2 (0xf7f3e000)
-	libaudit.so.1 => /lib/i386-linux-gnu/libaudit.so.1 (0xf7a92000)
-	libm.so.6 => /lib/i386-linux-gnu/libm.so.6 (0xf798e000)
-	libgcc_s.so.1 => /lib/i386-linux-gnu/libgcc_s.so.1 (0xf7970000)
-	libXau.so.6 => /usr/lib/i386-linux-gnu/libXau.so.6 (0xf796c000)
-	libXdmcp.so.6 => /usr/lib/i386-linux-gnu/libXdmcp.so.6 (0xf7965000)
-	libcap-ng.so.0 => /lib/i386-linux-gnu/libcap-ng.so.0 (0xf795f000)
-	libbsd.so.0 => /lib/i386-linux-gnu/libbsd.so.0 (0xf7944000)
-	librt.so.1 => /lib/i386-linux-gnu/librt.so.1 (0xf793a000)
-```
+    ```bash
+    linux-gate.so.1 (0xf7f3c000)
+    libX11.so.6 => /usr/lib/i386-linux-gnu/libX11.so.6 (0xf7dea000)
+    libpthread.so.0 => /lib/i386-linux-gnu/libpthread.so.0 (0xf7dcb000)
+    libresolv.so.2 => /lib/i386-linux-gnu/libresolv.so.2 (0xf7db3000)
+    libdl.so.2 => /lib/i386-linux-gnu/libdl.so.2 (0xf7dae000)
+    libpam.so.0 => /lib/i386-linux-gnu/libpam.so.0 (0xf7d9e000)
+    libnsl.so.1 => /lib/i386-linux-gnu/libnsl.so.1 (0xf7d83000)
+    libstdc++.so.5 => /usr/lib/i386-linux-gnu/libstdc++.so.5 (0xf7cc4000)
+    libc.so.6 => /lib/i386-linux-gnu/libc.so.6 (0xf7ae8000)
+    libxcb.so.1 => /usr/lib/i386-linux-gnu/libxcb.so.1 (0xf7abc000)
+    /lib/ld-linux.so.2 (0xf7f3e000)
+    libaudit.so.1 => /lib/i386-linux-gnu/libaudit.so.1 (0xf7a92000)
+    libm.so.6 => /lib/i386-linux-gnu/libm.so.6 (0xf798e000)
+    libgcc_s.so.1 => /lib/i386-linux-gnu/libgcc_s.so.1 (0xf7970000)
+    libXau.so.6 => /usr/lib/i386-linux-gnu/libXau.so.6 (0xf796c000)
+    libXdmcp.so.6 => /usr/lib/i386-linux-gnu/libXdmcp.so.6 (0xf7965000)
+    libcap-ng.so.0 => /lib/i386-linux-gnu/libcap-ng.so.0 (0xf795f000)
+    libbsd.so.0 => /lib/i386-linux-gnu/libbsd.so.0 (0xf7944000)
+    librt.so.1 => /lib/i386-linux-gnu/librt.so.1 (0xf793a000)
+    ```
 
 8. Manually try to connect:
 
-```bash
-snx -s ip_vpn_server -c /certificate.p12
-```
+    ```bash
+    snx -s ip_vpn_server -c /certificate.p12
+    ```
 
-Expected output similar to:
+    Expected output similar to:
 
-```bash
-Please enter the certificate's password:
-```
+    ```bash
+    Please enter the certificate's password:
+    ```
 
-9. Type the password and press "Enter"
+9. Type the password and press <kbd>Enter</kbd>
 
-Expected output similar to:
+    Expected output similar to:
 
-```bash
-SNX - connected.
+    ```bash
+    SNX - connected.
 
-Session parameters:
-===================
-Office Mode IP      : 192.168.90.82
-DNS Server          : 10.20.30.41
-Secondary DNS Server: 10.20.30.42
-Timeout             : 6hours 
-```
+    Session parameters:
+    ===================
+    Office Mode IP      : 192.168.90.82
+    DNS Server          : 10.20.30.41
+    Secondary DNS Server: 10.20.30.42
+    Timeout             : 6hours 
+    ```
 
 ## Make the connection easier
 
@@ -314,40 +318,40 @@ Once you checked that the SNX client works, you could create a script to make th
 
 1. Create the script
 
-```bash
-sudo vim /usr/local/bin/snx-vpn.sh
-```
+    ```bash
+    sudo vim /usr/local/bin/snx-vpn.sh
+    ```
 
-With below content, adjusting "SNX_DOCKER_NAME" and routes to match your needs:
+    With below content, adjusting `SNX_DOCKER_NAME` and routes to match your needs:
 
-```bash
-#! /bin/bash
-SNX_DOCKER_NAME="snx-vpn"
-IS_DOCKER_RUNNING="$(docker inspect -f '{{ .State.Running }}' $SNX_DOCKER_NAME)"
-if [ "true" == $IS_DOCKER_RUNNING ]; then
-    exit 0
-fi
-docker start $SNX_DOCKER_NAME
-SNX_DOCKER_IP="$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' $SNX_DOCKER_NAME)"
-# Add custom rules behind this line
-#sudo route add -net 10.20.30.0 netmask 255.255.255.0 gw $SNX_DOCKER_IP
-```
+    ```bash
+    #! /bin/bash
+    SNX_DOCKER_NAME="snx-vpn"
+    IS_DOCKER_RUNNING="$(docker inspect -f '{{ .State.Running }}' $SNX_DOCKER_NAME)"
+    if [ "true" == $IS_DOCKER_RUNNING ]; then
+        exit 0
+    fi
+    docker start $SNX_DOCKER_NAME
+    SNX_DOCKER_IP="$(docker inspect --format '{{ .NetworkSettings.IPAddress }}' $SNX_DOCKER_NAME)"
+    # Add custom rules behind this line
+    #sudo route add -net 10.20.30.0 netmask 255.255.255.0 gw $SNX_DOCKER_IP
+    ```
 
 2. Make it executable
 
-```bash
-chmod +x /usr/local/bin/snx-vpn.sh
-```
+    ```bash
+    chmod +x /usr/local/bin/snx-vpn.sh
+    ```
 
 3. Test it:
 
-```bash
-snx-vpn.sh
-```
+    ```bash
+    snx-vpn.sh
+    ```
 
 ## Credits
 
-This image is inspired in the excellent work of below people:
+This image is inspired by the excellent work of:
 
 <https://github.com/Kedu-SCCL/docker-snx-checkpoint-vpn>
 
