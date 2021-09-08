@@ -27,27 +27,25 @@ snx_command=""
 certificate_path="/certificate.p12"
 
 if [ -f "$certificate_path" ]; then
-    if [ ! -z "$user" ]; then
-        snx_command="snx -s $server -u $user -c $certificate_path"
-    else
-        snx_command="snx -s $server -c $certificate_path"
-    fi
+  if [ -n "$user" ]; then
+    snx_command="snx -s $server -u $user -c $certificate_path"
+  else
+    snx_command="snx -s $server -c $certificate_path"
+  fi
 else
-    snx_command="snx -s $server -u $user"
+  snx_command="snx -s $server -u $user"
 fi
 
 iptables -t nat -A POSTROUTING -o tunsnx -j MASQUERADE
 iptables -A FORWARD -i eth0 -j ACCEPT
 
-
-/usr/bin/expect <<EOF
+/usr/bin/expect -c "
 spawn $snx_command
 expect "*?assword:"
-send "$password\r"
-expect "*Do you accept*"
-send "y\r"
-expect "SNX - connected."
-interact
-EOF
+send \"$password\r\"
+expect \"*Do you accept*\"
+send \"y\r\"
+interact return
+"
 
 /bin/bash
