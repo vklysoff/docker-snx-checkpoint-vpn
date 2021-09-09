@@ -8,25 +8,27 @@ Client for Checkpoint VPN using snx GNU/Linux client. It accepts username and/or
 
 ### 1. Create the container
 
-* With docker-compose (`.p12` certificate file required)
+* With `docker-compose` (`.p12` certificate file required)
 
     1. Create a `.env` file
 
-        Create a `.env` file in the root of the project, alongside `docker-compose.yml`, with your env variables (take a look at `.env.example`).
+        Create a `.env` file in the root of the project, alongside [`docker-compose.yml`](docker-compose.yml), with your env variables (take a look at  [`.env.example`](.env.example)).
 
     2. Start the container
 
-        ```bash
+        ```sh
         docker-compose up -d
         ```
 
 OR
 
-* With docker
+* With `docker`
+
+    **IMPORTANT**: to use your certificate, specify a volume with `/certificate.p12` as container path
 
     1. With certificate
 
-        ```bash
+        ```sh
         docker run --name snx-vpn \
         --cap-add=ALL \
         -v /lib/modules:/lib/modules \
@@ -36,12 +38,10 @@ OR
         -t \
         -d ananni/snx-checkpoint-vpn
         ```
-
-        **IMPORTANT**: specify a volume with `/certificate.p12` as container path
 
     2. With certificate and username
 
-        ```bash
+        ```sh
         docker run --name snx-vpn \
         --cap-add=ALL \
         -v /lib/modules:/lib/modules \
@@ -53,11 +53,9 @@ OR
         -d ananni/snx-checkpoint-vpn
         ```
 
-        **IMPORTANT**: specify a volume with `/certificate.p12` as container path
+    3. Without certificate (NOT TESTED)
 
-    3. Without certificate
-
-        ```bash
+        ```sh
         docker run --name snx-vpn \
         --cap-add=ALL \
         -v /lib/modules:/lib/modules \
@@ -68,29 +66,29 @@ OR
         -d ananni/snx-checkpoint-vpn
         ```
 
-### 2. Get IP address of the container
+### 2. Get the container IP address
 
-```bash
+```sh
 docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' snx-vpn
 ```
 
 Example output:
 
-```bash
+```sh
 172.17.0.2
 ```
 
 ### 3. Add a route using the container IP address as gateway
 
-```bash
+```sh
 sudo route add -net 10.20.30.0 gw 172.17.0.2 netmask 255.255.255.0
 ```
 
 If netmask `255.255.255.0` isn't working, you can try `255.255.255.255`.
 
-### 4. Try to reach the server behind SNX VPN (in this example through SSH)
+### 4. Try to reach the server behind SNX VPN (e.g. through SSH)
 
-```bash
+```sh
 ssh 10.20.30.40
 ```
 
@@ -102,11 +100,15 @@ ssh 10.20.30.40
 
 `SNX_USER`: Optional if certificate volume has been provided, otherwise mandatory. String corresponding to the username of VPN client
 
-With docker-compose you also need the following variables:
+With `docker-compose` you also need the following variables:
 
 `CONTAINER_NAME`: Name to assign to the container
 
 `LOCAL_CERTIFICATE_PATH`: Local absolute path to your `.p12` certificate
+
+**IMPORTANT**: Remember to escape any special character. For example, `stR0ngPas$word2` becomes `'stR0ngPas\$word2'`.
+
+Wrapping with single quotes is only needed if you're creating the container with `docker run`, you can omit them if you're using `docker-compose` with the `.env` file.
 
 ## Allowed volumes
 
@@ -116,13 +118,13 @@ With docker-compose you also need the following variables:
 
 Since the container is the one that connects to the VPN server, it's the one that receives the routes. In order to list all of them perform the following command from the docker host (`snx-vpn` is the container name in this example):
 
-```bash
+```sh
 docker exec -ti snx-vpn route -n | grep -v eth0
 ```
 
 Expected output similar to:
 
-```bash
+```sh
 Kernel IP routing table
 Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 10.20.30.0       0.0.0.0         255.255.255.0   U     0      0        0 tunsnx
@@ -132,13 +134,13 @@ Destination     Gateway         Genmask         Flags Metric Ref    Use Iface
 
 Then manually add a route:
 
-```bash
+```sh
 sudo route add -net 10.20.30.0 netmask 255.255.255.0 gw `docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' snx-vpn`
 ```
 
 And finally test access. In this example trying to reach via SSH a remote server:
 
-```bash
+```sh
 ssh user@10.20.30.40
 ```
 
@@ -148,13 +150,13 @@ Since the container is the one that connects to the VPN server, it's the one tha
 
 * Check the container logs (`snx-vpn` is the container name in this example)
 
-    ```bash
+    ```sh
     docker logs snx-vpn | grep DNS
     ```
 
     Expected output similar to:
 
-    ```bash
+    ```sh
     DNS Server          : 10.20.30.11
     Secondary DNS Server: 10.20.30.12
     ```
@@ -163,13 +165,13 @@ OR
 
 * Check `/etc/resolv.conf` container file (`snx-vpn` is the container name in this example)
 
-    ```bash
+    ```sh
     docker exec -ti snx-vpn cat /etc/resolv.conf
     ```
 
     Expected output similar to:
 
-    ```bash
+    ```sh
     nameserver 10.20.30.11
     nameserver 10.20.30.12
     nameserver 8.8.4.4
@@ -180,13 +182,13 @@ Once you know the DNS servers you can proceed in one of two ways:
 
 * Update your docker host `/etc/resolv.conf`
 
-    ```bash
+    ```sh
     sudo vim /etc/resolv.conf
     ```
 
     With below content:
 
-    ```bash
+    ```sh
     nameserver 10.20.30.11
     nameserver 10.20.30.12
     ```
@@ -195,29 +197,29 @@ Once you know the DNS servers you can proceed in one of two ways:
 
 OR
 
-* Run a local dnsmasq service. It requeries that you know the remote domains beforehand (`example.com` in this example)
+* Run a local dnsmasq service. It requires that you know the remote domains beforehand (`example.com` in this example)
 
     1. Create the file:
 
-        ```bash
+        ```sh
         sudo vim /etc/dnsmasq.d/example.com
         ```
 
         With below content:
 
-        ```bash
+        ```sh
         server=/example.com/10.20.30.11
         ```
 
     2. Restart the "dnsmasq" service
 
-        ```bash
+        ```sh
         sudo service dnsmasq restart
         ```
 
     3. Test it
 
-        ```bash
+        ```sh
         ssh server.example.com
         ```
 
@@ -233,25 +235,25 @@ If the container started up you could quickly test the new SNX build as follows:
 
 1. Copy the SNX build from the docker host to the docker container
 
-    ```bash
+    ```sh
     docker cp snx_install.sh snx-vpn:/
     ```
 
 2. Connect to the docker container
 
-    ```bash
+    ```sh
     docker exec -ti snx-vpn bash
     ```
 
 3. Get process ID of the currently running SNX client (if any):
 
-    ```bash
+    ```sh
     ps ax
     ```
 
     Expected output similar to:
 
-    ```bash
+    ```sh
     PID TTY      STAT   TIME COMMAND
         1 pts/0    Ss     0:00 /bin/bash /root/snx.sh
     29 ?        Ss     0:00 snx -s ip_vpn_server -c /certificate.p12
@@ -262,37 +264,37 @@ If the container started up you could quickly test the new SNX build as follows:
 
 4. Kill the process (in this example 29):
 
-    ```bash
+    ```sh
     kill 29
     ```
 
 5. Adjust permissions of the SNX build
 
-    ```bash
+    ```sh
     chmod a+rx snx_install.sh
     ```
 
 6. Execute the installation file:
 
-    ```bash
+    ```sh
     ./snx_install.sh
     ```
 
     Expected output:
 
-    ```bash
+    ```sh
     Installation successfull
     ```
 
 7. Check installation:
 
-    ```bash
+    ```sh
     ldd /usr/bin/snx
     ```
 
     Expected output similar to:
 
-    ```bash
+    ```sh
     linux-gate.so.1 (0xf7f3c000)
     libX11.so.6 => /usr/lib/i386-linux-gnu/libX11.so.6 (0xf7dea000)
     libpthread.so.0 => /lib/i386-linux-gnu/libpthread.so.0 (0xf7dcb000)
@@ -316,13 +318,13 @@ If the container started up you could quickly test the new SNX build as follows:
 
 8. Manually try to connect:
 
-    ```bash
+    ```sh
     snx -s ip_vpn_server -c /certificate.p12
     ```
 
     Expected output similar to:
 
-    ```bash
+    ```sh
     Please enter the certificate's password:
     ```
 
@@ -330,7 +332,7 @@ If the container started up you could quickly test the new SNX build as follows:
 
     Expected output similar to:
 
-    ```bash
+    ```sh
     SNX - connected.
 
     Session parameters:
@@ -347,13 +349,13 @@ Once you checked that the SNX client works, you could create a script to make th
 
 1. Create the script
 
-    ```bash
+    ```sh
     sudo vim /usr/local/bin/snx-vpn.sh
     ```
 
     With below content, adjusting `SNX_DOCKER_NAME` and routes to match your needs:
 
-    ```bash
+    ```sh
     #! /bin/bash
     SNX_DOCKER_NAME="snx-vpn"
     IS_DOCKER_RUNNING="$(docker inspect -f '{{ .State.Running }}' $SNX_DOCKER_NAME)"
@@ -368,13 +370,13 @@ Once you checked that the SNX client works, you could create a script to make th
 
 2. Make it executable
 
-    ```bash
+    ```sh
     chmod +x /usr/local/bin/snx-vpn.sh
     ```
 
 3. Test it:
 
-    ```bash
+    ```sh
     snx-vpn.sh
     ```
 
