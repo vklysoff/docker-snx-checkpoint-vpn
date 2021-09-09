@@ -102,6 +102,12 @@ ssh 10.20.30.40
 
 `SNX_USER`: Optional if certificate volume has been provided, otherwise mandatory. String corresponding to the username of VPN client
 
+With docker-compose you also need the following variables:
+
+`CONTAINER_NAME`: Name to assign to the container
+
+`LOCAL_CERTIFICATE_PATH`: Local absolute path to your `.p12` certificate
+
 ## Allowed volumes
 
 `/certificate.p12`: A VPN client certificate. If present the SNX binary will be invoked with `-c` parameter pointing to this certificate file.
