@@ -4,66 +4,89 @@
 
 Client for Checkpoint VPN using snx GNU/Linux client. It accepts username and/or certificate.
 
-## For the impatients
+## Usage
 
-### 1. Run the container
+### 1. Create the container
 
-#### With username and password
+* With docker-compose (`.p12` certificate file required)
 
-```bash
-docker run --name snx-vpn \
-  --cap-add=ALL \
-  -v /lib/modules:/lib/modules \
-  -e SNX_SERVER=vpn_server_ip_address \
-  -e SNX_USER=user \
-  -e SNX_PASSWORD=secret \
-  -t \
-  -d ananni/snx-checkpoint-vpn
-```
+    1. Create a `.env` file
 
-#### With username, password and certificate
+        Create a `.env` file in the root of the project, alongside `docker-compose.yml`, with your env variables (take a look at `.env.example`).
 
-```bash
-docker run --name snx-vpn \
-  --cap-add=ALL \
-  -v /lib/modules:/lib/modules \
-  -e SNX_SERVER=vpn_server_ip_address \
-  -e SNX_USER=user \
-  -e SNX_PASSWORD=secret \
-  -v /path/to/my_snx_vpn_certificate.p12:/certificate.p12 \
-  -t \
-  -d ananni/snx-checkpoint-vpn
-```
+    2. Start the container
 
-**IMPORTANT**: specify a volume with `/certificate.p12` as container path
+        ```bash
+        docker-compose up -d
+        ```
 
-#### Without username, with password and certificate
+OR
 
-```bash
-docker run --name snx-vpn \
-  --cap-add=ALL \
-  -v /lib/modules:/lib/modules \
-  -e SNX_SERVER=vpn_server_ip_address \
-  -e SNX_PASSWORD=secret \
-  -v /path/to/my_snx_vpn_certificate.p12:/certificate.p12 \
-  -t \
-  -d ananni/snx-checkpoint-vpn
-```
+* With docker
 
-**IMPORTANT**: specify a volume with `/certificate.p12` as container path
+    1. With certificate
 
-### 2. Get private IP address of docker container
+        ```bash
+        docker run --name snx-vpn \
+        --cap-add=ALL \
+        -v /lib/modules:/lib/modules \
+        -e SNX_SERVER=vpn_server_ip_address \
+        -e SNX_PASSWORD=secret \
+        -v /path/to/my_snx_vpn_certificate.p12:/certificate.p12 \
+        -t \
+        -d ananni/snx-checkpoint-vpn
+        ```
+
+        **IMPORTANT**: specify a volume with `/certificate.p12` as container path
+
+    2. With certificate and username
+
+        ```bash
+        docker run --name snx-vpn \
+        --cap-add=ALL \
+        -v /lib/modules:/lib/modules \
+        -e SNX_SERVER=vpn_server_ip_address \
+        -e SNX_USER=user \
+        -e SNX_PASSWORD=secret \
+        -v /path/to/my_snx_vpn_certificate.p12:/certificate.p12 \
+        -t \
+        -d ananni/snx-checkpoint-vpn
+        ```
+
+        **IMPORTANT**: specify a volume with `/certificate.p12` as container path
+
+    3. Without certificate
+
+        ```bash
+        docker run --name snx-vpn \
+        --cap-add=ALL \
+        -v /lib/modules:/lib/modules \
+        -e SNX_SERVER=vpn_server_ip_address \
+        -e SNX_USER=user \
+        -e SNX_PASSWORD=secret \
+        -t \
+        -d ananni/snx-checkpoint-vpn
+        ```
+
+### 2. Get IP address of the container
 
 ```bash
 docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' snx-vpn
+```
+
+Example output:
+
+```bash
 172.17.0.2
 ```
 
-### 3. Add a route using previous step IP address as gateway
+### 3. Add a route using the container IP address as gateway
 
 ```bash
 sudo route add -net 10.20.30.0 gw 172.17.0.2 netmask 255.255.255.0
 ```
+
+If netmask `255.255.255.0` isn't working, you can try `255.255.255.255`.
 
 ### 4. Try to reach the server behind SNX VPN (in this example through SSH)
 
