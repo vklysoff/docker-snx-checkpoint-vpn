@@ -81,15 +81,17 @@ Example output:
 ### 3. Add a route using the container IP address as gateway
 
 ```sh
-sudo route add -net 10.20.30.0 gw 172.17.0.2 netmask 255.255.255.0
+sudo route add -net <ip> gw 172.17.0.2 netmask 255.255.255.0
 ```
+
+Replace `<ip>` with the IP address you want to reach with the VPN.
 
 If netmask `255.255.255.0` isn't working, you can try `255.255.255.255`.
 
 ### 4. Try to reach the server behind SNX VPN (e.g. through SSH)
 
 ```sh
-ssh 10.20.30.40
+ssh <ip>
 ```
 
 ## Environment Variables
@@ -106,9 +108,7 @@ With `docker-compose` you also need the following variables:
 
 `LOCAL_CERTIFICATE_PATH`: Local absolute path to your `.p12` certificate
 
-**IMPORTANT**: Remember to escape any special character. For example, `stR0ngPas$word2` becomes `'stR0ngPas\$word2'`.
-
-Wrapping with single quotes is only needed if you're creating the container with `docker run`, you can omit them if you're using `docker-compose` with the `.env` file.
+**IMPORTANT**: Remember to escape any special character. For example, `stR0ngPas$word2` becomes `'stR0ngPas\$word2'`. Wrapping with single quotes is only needed if you're creating the container with `docker run`, you can omit them if you're using `docker-compose` with the `.env` file.
 
 ## Allowed volumes
 
@@ -345,40 +345,63 @@ If the container started up you could quickly test the new SNX build as follows:
 
 ## Make the connection easier
 
-Once you checked that the SNX client works, you could create a script to make the whole process easier:
+After you created the container and checked that the SNX client works, you could create a script to make the whole process easier:
 
-1. Create the script
+Example script `snx-vpn.sh` that starts the container and automatically adds a route:
 
-    ```sh
-    sudo vim /usr/local/bin/snx-vpn.sh
-    ```
+```sh
+#! /bin/bash
+COMMAND_PARAM=${1:-}
+if [ "$COMMAND_PARAM" != "start" ] && [ "$COMMAND_PARAM" != "stop" ]; then
+    echo -e "'$COMMAND_PARAM' is not a valid command!"
+    exit 1
+fi
 
-    With below content, adjusting `SNX_DOCKER_NAME` and routes to match your needs:
-
-    ```sh
-    #! /bin/bash
-    SNX_DOCKER_NAME="snx-vpn"
-    IS_DOCKER_RUNNING="$(docker inspect -f '{{ .State.Running }}' $SNX_DOCKER_NAME)"
-    if [ "true" == $IS_DOCKER_RUNNING ]; then
+if [ "$COMMAND_PARAM" == "start" ]; then
+    IP=$2
+    if [ -z "$IP" ]; then
+        echo "IP argument required"
+        exit 1
+    fi
+    NET_MASK=${3:-255.255.255.255}
+    SNX_DOCKER_NAME=${4:-snx-vpn}
+    IS_DOCKER_RUNNING=$(docker inspect -f '{{ .State.Running }}' "$SNX_DOCKER_NAME")
+    if [ "true" == "$IS_DOCKER_RUNNING" ]; then
         exit 0
     fi
-    docker start $SNX_DOCKER_NAME
-    SNX_DOCKER_IP="$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $SNX_DOCKER_NAME)"
-    # Add custom rules behind this line
-    #sudo route add -net 10.20.30.0 netmask 255.255.255.0 gw $SNX_DOCKER_IP
-    ```
 
-2. Make it executable
+    docker start "$SNX_DOCKER_NAME"
+    SNX_DOCKER_IP=$(docker inspect --format='{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "$SNX_DOCKER_NAME")
+    echo "adding route -net $IP netmask $NET_MASK gw $SNX_DOCKER_IP"
+    sudo route add -net "$IP" netmask "$NET_MASK" gw "$SNX_DOCKER_IP"
+    exit 0
+fi
 
-    ```sh
-    chmod +x /usr/local/bin/snx-vpn.sh
-    ```
+if [ "$COMMAND_PARAM" == "stop" ]; then
+    SNX_DOCKER_NAME=${2:-snx-vpn}
+    IS_DOCKER_RUNNING=$(docker inspect -f '{{ .State.Running }}' "$SNX_DOCKER_NAME")
+    if [ "true" == "$IS_DOCKER_RUNNING" ]; then
+        docker stop "$SNX_DOCKER_NAME"
+        exit 0
+    fi
+fi
+```
 
-3. Test it:
+Usage:
 
-    ```sh
-    snx-vpn.sh
-    ```
+```sh
+./snx-vpn.sh start <ip> [<netmask>] [<container-name>]
+```
+
+```sh
+./snx-vpn.sh stop [<container-name>]
+```
+
+`<ip>`: required, the IP address you want to reach behind the VPN.
+
+`<netmask>`: optional, defaults to `255.255.255.255`.
+
+`<container-name>`: optional, defaults to `snx-vpn`.
 
 ## Credits
 
