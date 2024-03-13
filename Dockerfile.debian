@@ -1,0 +1,32 @@
+FROM debian:bookworm
+
+RUN true \
+    && dpkg --add-architecture i386 \
+    && apt update \
+    && apt install -y \
+        bzip2 \
+        kmod \
+        libstdc++5:i386 \
+        libpam0g:i386 \
+        libx11-6:i386 \
+        expect \
+        iptables \
+        net-tools \
+        iputils-ping \
+        iproute2 \
+        dante-server \
+    && apt clean
+
+ADD scripts/snx_install.sh /root
+RUN cd /root && bash -x snx_install.sh
+
+ADD scripts/snx.sh /root
+RUN chmod +x /root/snx.sh
+
+ADD dante.conf /etc/danted.conf
+
+
+ENTRYPOINT [ \
+    "/bin/bash", "-c", \
+    "/root/snx.sh && danted" \
+    ]

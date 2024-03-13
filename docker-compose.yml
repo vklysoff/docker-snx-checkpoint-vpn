@@ -2,12 +2,16 @@ version: "3.8"
 
 services:
   snx-checkpoint-vpn:
-    container_name: "${CONTAINER_NAME}"
-    image: ananni/snx-checkpoint-vpn:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.ubuntu
+    image: snx-checkpoint-vpn:latest
     env_file: ./.env
     cap_add:
       - ALL
     tty: true
     volumes:
       - /lib/modules:/lib/modules
-      - ${LOCAL_CERTIFICATE_PATH}:/certificate.p12
+      # - ${LOCAL_CERTIFICATE_PATH}:/certificate.p12
+    ports:
+      - 127.0.0.1:34555:1080
