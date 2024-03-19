@@ -47,5 +47,3 @@ expect \"*Do you accept*\"
 send \"y\r\"
 interact return
 "
-
-/bin/bash
